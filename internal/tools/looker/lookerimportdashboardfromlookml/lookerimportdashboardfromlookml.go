@@ -119,7 +119,7 @@ func (t Tool) Invoke(ctx context.Context, s sources.Source, params parameters.Pa
 	if err != nil {
 		return nil, util.NewClientServerError("unable to get logger from ctx", http.StatusInternalServerError, err)
 	}
-	logger.DebugContext(ctx, "params = ", params)
+	logger.DebugContext(ctx, "invoking tool", "params", params)
 
 	paramsMap := params.AsMap()
 	lookml, ok := paramsMap["lookml"].(string)
@@ -154,7 +154,7 @@ func (t Tool) Invoke(ctx context.Context, s sources.Source, params parameters.Pa
 		}
 		return nil, util.ProcessGeneralError(err)
 	}
-	logger.DebugContext(ctx, "resp = %v", resp)
+	logger.DebugContext(ctx, "received response from Looker", "resp", resp)
 
 	hostURL, err := source.GetHostURL(ctx, sdk)
 	if err != nil {
@@ -172,7 +172,7 @@ func (t Tool) Invoke(ctx context.Context, s sources.Source, params parameters.Pa
 			data["url"] = *resp.Url
 		}
 	}
-	logger.DebugContext(ctx, "data = %v", data)
+	logger.DebugContext(ctx, "returning data", "data", data)
 
 	return data, nil
 }
