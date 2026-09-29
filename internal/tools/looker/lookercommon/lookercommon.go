@@ -488,7 +488,7 @@ func BuildWriteDashboardElement(ctx context.Context, sdk *v4.LookerSDK, dashboar
 	if elemType == "" {
 		model, _ := paramsMap["model"].(string)
 		explore, _ := paramsMap["explore"].(string)
-		if model == "" && explore == "" && (bodyTextPtr != nil || titleTextPtr != nil) {
+		if model == "" && explore == "" && (bodyTextPtr != nil || titleTextPtr != nil || subtitleTextPtr != nil || richContentJsonPtr != nil) {
 			elemType = "text"
 		} else if len(visConfig) > 0 {
 			elemType = "vis"
