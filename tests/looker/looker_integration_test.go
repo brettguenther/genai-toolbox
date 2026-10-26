@@ -1448,21 +1448,21 @@ func TestLooker(t *testing.T) {
 				"parameters": []any{
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The model containing the explore.",
+						"description":  "The model containing the explore (required if type is 'vis' or 'data').",
 						"name":         "model",
 						"required":     false,
 						"type":         "string",
 					},
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The explore to be queried.",
+						"description":  "The explore to be queried (required if type is 'vis' or 'data').",
 						"name":         "explore",
 						"required":     false,
 						"type":         "string",
 					},
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The fields to be retrieved.",
+						"description":  "The fields to be retrieved (required if type is 'vis' or 'data').",
 						"items": map[string]any{
 							"authServices": []any{},
 							"description":  "A field to be returned in the query",
@@ -2246,21 +2246,21 @@ func TestLooker(t *testing.T) {
 				"parameters": []any{
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The model containing the explore.",
+						"description":  "The model containing the explore (required if type is 'vis' or 'data').",
 						"name":         "model",
 						"required":     false,
 						"type":         "string",
 					},
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The explore to be queried.",
+						"description":  "The explore to be queried (required if type is 'vis' or 'data').",
 						"name":         "explore",
 						"required":     false,
 						"type":         "string",
 					},
 					map[string]any{
 						"authServices": []any{},
-						"description":  "The fields to be retrieved.",
+						"description":  "The fields to be retrieved (required if type is 'vis' or 'data').",
 						"items": map[string]any{
 							"authServices": []any{},
 							"description":  "A field to be returned in the query",

@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -120,27 +121,36 @@ func GetFieldParameters() parameters.Parameters {
 }
 
 func GetQueryParameters() parameters.Parameters {
-	return getQueryParameters(true)
-}
-
-func GetDashboardElementQueryParameters() parameters.Parameters {
-	return getQueryParameters(false)
-}
-
-func getQueryParameters(required bool) parameters.Parameters {
-	var strOpts []parameters.StringParameterOption
-	var arrOpts []parameters.ArrayParameterOption
-	if !required {
-		strOpts = append(strOpts, parameters.WithStringRequired(false))
-		arrOpts = append(arrOpts, parameters.WithArrayRequired(false))
-	}
-	modelParameter := parameters.NewStringParameter("model", "The model containing the explore.", strOpts...)
-	exploreParameter := parameters.NewStringParameter("explore", "The explore to be queried.", strOpts...)
+	modelParameter := parameters.NewStringParameter("model", "The model containing the explore.")
+	exploreParameter := parameters.NewStringParameter("explore", "The explore to be queried.")
 	fieldsParameter := parameters.NewArrayParameter("fields",
 		"The fields to be retrieved.",
 		parameters.NewStringParameter("field", "A field to be returned in the query"),
-		arrOpts...,
 	)
+	return append(parameters.Parameters{modelParameter, exploreParameter, fieldsParameter}, getQueryParameters()...)
+}
+
+func GetDashboardElementQueryParameters() parameters.Parameters {
+	modelParameter := parameters.NewStringParameter(
+		"model",
+		"The model containing the explore (required if type is 'vis' or 'data').",
+		parameters.WithStringRequired(false),
+	)
+	exploreParameter := parameters.NewStringParameter(
+		"explore",
+		"The explore to be queried (required if type is 'vis' or 'data').",
+		parameters.WithStringRequired(false),
+	)
+	fieldsParameter := parameters.NewArrayParameter(
+		"fields",
+		"The fields to be retrieved (required if type is 'vis' or 'data').",
+		parameters.NewStringParameter("field", "A field to be returned in the query"),
+		parameters.WithArrayRequired(false),
+	)
+	return append(parameters.Parameters{modelParameter, exploreParameter, fieldsParameter}, getQueryParameters()...)
+}
+
+func getQueryParameters() parameters.Parameters {
 	filtersParameter := parameters.NewMapParameter(
 		"filters",
 		"The filters for the query. Keys are fully-qualified field names "+
@@ -176,9 +186,6 @@ func getQueryParameters(required bool) parameters.Parameters {
 	)
 
 	return parameters.Parameters{
-		modelParameter,
-		exploreParameter,
-		fieldsParameter,
 		filtersParameter,
 		pivotsParameter,
 		sortsParameter,
@@ -191,7 +198,7 @@ func getQueryParameters(required bool) parameters.Parameters {
 
 func GetDashboardElementParameters() parameters.Parameters {
 	return parameters.Parameters{
-		parameters.NewStringParameter("type", "The type of dashboard element: 'vis' (visualization), 'data' (data table), or 'text' (text/markdown tile).", parameters.WithStringRequired(false)),
+		parameters.NewStringParameter("type", "The type of dashboard element: 'vis' (visualization), 'data' (data table), or 'text' (text/markdown tile).", parameters.WithStringRequired(false), parameters.WithStringAllowedValues([]any{"vis", "data", "text"})),
 		parameters.NewStringParameter("body_text", "The text, Markdown, HTML, or Slate JSON body content for 'text' tiles.", parameters.WithStringRequired(false)),
 		parameters.NewStringParameter("title_text", "The title text for 'text' tiles.", parameters.WithStringRequired(false)),
 		parameters.NewStringParameter("subtitle_text", "The subtitle text displayed below the title.", parameters.WithStringRequired(false)),
@@ -371,29 +378,17 @@ func ProcessQueryArgs(ctx context.Context, params parameters.ParamValues) (*v4.W
 		processedFilters[newKey] = newVal
 	}
 	filters = processedFilters
-	pivotsRaw, _ := paramsMap["pivots"].([]any)
-	if pivotsRaw == nil {
-		pivotsRaw = []any{}
-	}
-	p, err := parameters.ConvertAnySliceToTyped(pivotsRaw, "string")
+	p, err := parameters.ConvertAnySliceToTyped(paramsMap["pivots"].([]any), "string")
 	if err != nil {
 		return nil, fmt.Errorf("can't convert pivots to array of strings: %s", err)
 	}
 	pivots := p.([]string)
-	sortsRaw, _ := paramsMap["sorts"].([]any)
-	if sortsRaw == nil {
-		sortsRaw = []any{}
-	}
-	s, err := parameters.ConvertAnySliceToTyped(sortsRaw, "string")
+	s, err := parameters.ConvertAnySliceToTyped(paramsMap["sorts"].([]any), "string")
 	if err != nil {
 		return nil, fmt.Errorf("can't convert sorts to array of strings: %s", err)
 	}
 	sorts := s.([]string)
-	limitVal := 500
-	if l, ok := paramsMap["limit"].(int); ok {
-		limitVal = l
-	}
-	limit := fmt.Sprintf("%v", limitVal)
+	limit := fmt.Sprintf("%v", paramsMap["limit"].(int))
 
 	var tz string
 	if paramsMap["tz"] != nil {
@@ -455,7 +450,7 @@ func optionalStringPtr(paramsMap map[string]any, key string) *string {
 func BuildWriteDashboardElement(ctx context.Context, sdk *v4.LookerSDK, dashboardId string, params parameters.ParamValues, opts *rtl.ApiSettings) (v4.WriteDashboardElement, util.ToolboxError) {
 	logger, err := util.LoggerFromContext(ctx)
 	if err != nil {
-		return v4.WriteDashboardElement{}, util.NewClientServerError("unable to get logger from ctx", 500, err)
+		return v4.WriteDashboardElement{}, util.NewClientServerError("unable to get logger from ctx", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
@@ -531,7 +526,7 @@ func BuildWriteDashboardElement(ctx context.Context, sdk *v4.LookerSDK, dashboar
 	qresp, err := sdk.CreateQuery(*wq, "id", opts)
 	if err != nil {
 		if strings.Contains(err.Error(), "status=401") {
-			return v4.WriteDashboardElement{}, util.NewClientServerError("unauthorized error", 401, err)
+			return v4.WriteDashboardElement{}, util.NewClientServerError("unauthorized error", http.StatusUnauthorized, err)
 		}
 		return v4.WriteDashboardElement{}, util.ProcessGeneralError(err)
 	}

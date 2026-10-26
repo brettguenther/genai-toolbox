@@ -347,6 +347,17 @@ func TestInvokeLookerAddDashboardElement(t *testing.T) {
 			t.Fatalf("expected error when model/explore/fields are missing for 'vis' element")
 		}
 	})
+
+	t.Run("invalid element type rejected by ParseParams", func(t *testing.T) {
+		rawArgs := map[string]any{
+			"dashboard_id": "78",
+			"type":         "invalid",
+		}
+		_, err := parameters.ParseParams(toolParams, rawArgs, nil)
+		if err == nil {
+			t.Fatalf("expected ParseParams error for invalid element type")
+		}
+	})
 }
 
 func TestInvokeDashboardFilters(t *testing.T) {
